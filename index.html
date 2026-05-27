@@ -1,0 +1,302 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>三關價計算器</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      min-height: 100vh;
+      background: #0a0a0f;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: 'Courier New', monospace;
+      padding: 24px;
+    }
+
+    .grid-bg {
+      position: fixed;
+      inset: 0;
+      background-image:
+        linear-gradient(rgba(0,255,180,0.03) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(0,255,180,0.03) 1px, transparent 1px);
+      background-size: 40px 40px;
+      z-index: 0;
+    }
+
+    .container {
+      position: relative;
+      z-index: 1;
+      width: 100%;
+      max-width: 420px;
+    }
+
+    .header {
+      text-align: center;
+      margin-bottom: 32px;
+    }
+
+    .header .sub {
+      font-size: 11px;
+      letter-spacing: 6px;
+      color: #00ffb4;
+      opacity: 0.6;
+      margin-bottom: 8px;
+    }
+
+    .header h1 {
+      font-size: 28px;
+      font-weight: 900;
+      color: #fff;
+      letter-spacing: 2px;
+    }
+
+    .header .desc {
+      font-size: 11px;
+      color: #888;
+      margin-top: 6px;
+      letter-spacing: 1px;
+    }
+
+    .input-card {
+      background: rgba(255,255,255,0.03);
+      border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 16px;
+      padding: 28px;
+      margin-bottom: 20px;
+    }
+
+    .input-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+    }
+
+    .input-group label {
+      font-size: 10px;
+      letter-spacing: 2px;
+      color: #666;
+      display: block;
+      margin-bottom: 8px;
+    }
+
+    .input-group input {
+      width: 100%;
+      background: rgba(255,255,255,0.05);
+      border: 1px solid rgba(255,255,255,0.1);
+      border-radius: 8px;
+      padding: 12px 14px;
+      color: #444;
+      font-size: 18px;
+      font-family: 'Courier New', monospace;
+      font-weight: 700;
+      outline: none;
+      transition: all 0.2s;
+    }
+
+    .input-group input:focus {
+      border-color: rgba(255,255,255,0.3);
+    }
+
+    #high-input { color: #ff6b6b; border-color: rgba(255,107,107,0.4); }
+    #low-input  { color: #00ffb4; border-color: rgba(0,255,180,0.4); }
+
+    .diff-row {
+      display: none;
+      margin-top: 16px;
+      padding: 8px 12px;
+      background: rgba(255,255,255,0.03);
+      border-radius: 6px;
+      font-size: 12px;
+      color: #666;
+      justify-content: space-between;
+    }
+
+    .diff-row span.val {
+      color: #fff;
+      font-weight: 700;
+    }
+
+    .results {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .result-card {
+      background: rgba(255,255,255,0.03);
+      border-radius: 12px;
+      padding: 16px 20px;
+      position: relative;
+      overflow: hidden;
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      transition: opacity 0.3s;
+    }
+
+    .result-card .bar {
+      position: absolute;
+      left: 0; top: 0; bottom: 0;
+      width: 3px;
+      border-radius: 12px 0 0 12px;
+    }
+
+    .result-card .info .name {
+      font-size: 13px;
+      font-weight: 700;
+      letter-spacing: 1px;
+      margin-right: 8px;
+    }
+
+    .result-card .info .tag {
+      font-size: 10px;
+      color: #555;
+      letter-spacing: 1px;
+    }
+
+    .result-card .info .formula {
+      font-size: 10px;
+      color: #444;
+      margin-top: 4px;
+    }
+
+    .result-card .value {
+      font-size: 22px;
+      font-weight: 900;
+      letter-spacing: 1px;
+    }
+
+    #upper-card { border: 1px solid rgba(255,107,107,0.2); }
+    #upper-card .bar { background: #ff6b6b; }
+    #upper-card .name, #upper-card .value { color: #ff6b6b; }
+
+    #mid-card { border: 1px solid rgba(255,209,102,0.2); }
+    #mid-card .bar { background: #ffd166; }
+    #mid-card .name, #mid-card .value { color: #ffd166; }
+
+    #lower-card { border: 1px solid rgba(0,255,180,0.2); }
+    #lower-card .bar { background: #00ffb4; }
+    #lower-card .name, #lower-card .value { color: #00ffb4; }
+
+    .placeholder {
+      text-align: center;
+      padding: 32px 0;
+      color: #333;
+      font-size: 13px;
+      letter-spacing: 1px;
+    }
+
+    .footer {
+      text-align: center;
+      margin-top: 24px;
+      font-size: 10px;
+      color: #333;
+      letter-spacing: 1px;
+    }
+  </style>
+</head>
+<body>
+  <div class="grid-bg"></div>
+
+  <div class="container">
+    <div class="header">
+      <div class="sub">FIBONACCI</div>
+      <h1>三關價計算器</h1>
+      <div class="desc">× 1.382 延伸區間</div>
+    </div>
+
+    <div class="input-card">
+      <div class="input-grid">
+        <div class="input-group">
+          <label>最高價</label>
+          <input id="high-input" type="number" placeholder="0" oninput="calculate()">
+        </div>
+        <div class="input-group">
+          <label>最低價</label>
+          <input id="low-input" type="number" placeholder="0" oninput="calculate()">
+        </div>
+      </div>
+      <div class="diff-row" id="diff-row">
+        <span>高低落差</span>
+        <span class="val" id="diff-val"></span>
+      </div>
+    </div>
+
+    <div id="placeholder" class="placeholder">輸入最高價與最低價以計算</div>
+
+    <div class="results" id="results" style="display:none;">
+      <div class="result-card" id="upper-card">
+        <div class="bar"></div>
+        <div class="info">
+          <div><span class="name">上界</span><span class="tag">壓力位</span></div>
+          <div class="formula" id="upper-formula"></div>
+        </div>
+        <div class="value" id="upper-val"></div>
+      </div>
+      <div class="result-card" id="mid-card">
+        <div class="bar"></div>
+        <div class="info">
+          <div><span class="name">中軸</span><span class="tag">均衡點</span></div>
+          <div class="formula" id="mid-formula"></div>
+        </div>
+        <div class="value" id="mid-val"></div>
+      </div>
+      <div class="result-card" id="lower-card">
+        <div class="bar"></div>
+        <div class="info">
+          <div><span class="name">下界</span><span class="tag">支撐位</span></div>
+          <div class="formula" id="lower-formula"></div>
+        </div>
+        <div class="value" id="lower-val"></div>
+      </div>
+    </div>
+
+    <div class="footer">
+      上界 = 低點 + 落差 × 1.382 ｜ 下界 = 高點 − 落差 × 1.382
+    </div>
+  </div>
+
+  <script>
+    const FIBO = 1.382;
+
+    function fmt(n) {
+      return n.toLocaleString('zh-TW', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    }
+
+    function calculate() {
+      const h = parseFloat(document.getElementById('high-input').value);
+      const l = parseFloat(document.getElementById('low-input').value);
+      const valid = !isNaN(h) && !isNaN(l) && h > l;
+
+      document.getElementById('placeholder').style.display = valid ? 'none' : 'block';
+      document.getElementById('results').style.display = valid ? 'flex' : 'none';
+      document.getElementById('diff-row').style.display = valid ? 'flex' : 'none';
+
+      if (!valid) return;
+
+      const diff  = h - l;
+      const upper = l + diff * FIBO;
+      const mid   = (h + l) / 2;
+      const lower = h - diff * FIBO;
+
+      document.getElementById('diff-val').textContent = fmt(diff);
+
+      document.getElementById('upper-val').textContent = fmt(upper);
+      document.getElementById('upper-formula').textContent =
+        `${fmt(l)} + ${fmt(diff)} × 1.382`;
+
+      document.getElementById('mid-val').textContent = fmt(mid);
+      document.getElementById('mid-formula').textContent =
+        `(${fmt(h)} + ${fmt(l)}) ÷ 2`;
+
+      document.getElementById('lower-val').textContent = fmt(lower);
+      document.getElementById('lower-formula').textContent =
+        `${fmt(h)} − ${fmt(diff)} × 1.382`;
+    }
+  </script>
+</body>
+</html>
